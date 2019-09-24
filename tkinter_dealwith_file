@@ -1,0 +1,159 @@
+from tkinter import *
+import os
+import time
+
+def GetFileName(fileDir):
+    strdot = ".";
+    for dir in os.listdir(fileDir):
+        absDir = os.path.abspath(fileDir)
+        if (os.path.isfile(os.path.join(absDir, dir))):
+            fileNames.append(dir[:dir.index(strdot)])
+            # 添加数据
+            text.insert(END, dir[:dir.index(strdot)])
+            # 文本框向下滚动
+            text.see(END)
+            # 更新
+            text.update()
+        elif(os.path.isdir(os.path.join(absDir, dir))):
+            GetFileName(os.path.join(absDir, dir))
+
+def GetDealFile(fileDir,nameInside):
+    needDealedfiles = []
+    for dir in os.listdir(fileDir):
+        absDir = os.path.abspath(fileDir)
+        if (os.path.isfile(os.path.join(absDir, dir))):
+            if(nameInside in dir):
+                print("is inside"+dir)
+            else:
+                # 添加数据
+                text.insert(END, dir)
+                # 文本框向下滚动
+                text.see(END)
+                # 更新
+                text.update()
+                needDealedfiles.append(dir)
+    return needDealedfiles
+
+def typeWindow(type):
+    # 文件的路径、显示文件名的文本、 文件名的集合、 文件包含的前缀或者后缀、 选择是前缀还是后缀
+    global path_input, text, fileNames, nameInside_input,cbStart,cbEnd,cbStartVari,cbEndVari
+    fileNames = []
+    #创建空白窗口,作为主载体
+    # root = Tk()
+
+    # 标签控件，窗口中放置文本组件
+    Label(selectWindow, text='请输入文件夹的地址:', font=("华文行楷", 20), fg='black').grid()
+    # 定位 pack包 place位置 grid是网格式的布局
+
+    # Entry是可输入文本框
+    path_input = Entry(selectWindow, font=("微软雅黑", 15))
+    path_input.grid(row=0, column=1)
+    Label(selectWindow, text='D:\\fileDir\\fileChildDir', font=("微软雅黑", 10), fg='black').grid(row=1)
+
+    if(type==0):
+        selectWindow.title('复制文件名')
+        # 窗口的大小，后面的加号是窗口在整个屏幕的位置
+        selectWindow.geometry('550x400+398+279')
+    else:
+        selectWindow.title("修改文件名")
+        # 窗口的大小，后面的加号是窗口在整个屏幕的位置
+        selectWindow.geometry('550x480+398+279')
+        # 标签控件，窗口中放置文本组件
+        Label(selectWindow, text='请输入添加的字符串:', font=("华文行楷", 20), fg='black').grid()
+        nameInside_input = Entry(selectWindow, font=("微软雅黑", 15))
+        nameInside_input.grid(row=2, column=1)
+        Label(selectWindow, text='蓝色冰川', font=("微软雅黑", 10), fg='black').grid(row=3)  # 标签控件，窗口中放置文本组件
+
+        cbStartVari = BooleanVar()  # 设置选择框对象
+        cbStart = Checkbutton(selectWindow, text='前缀', variable=cbStartVari, command=stateChangeStart)
+        cbStart.grid(row=4, column=0)
+
+        cbEndVari = BooleanVar()
+        cbEnd = Checkbutton(selectWindow, text='后缀', variable=cbEndVari, command=stateChangeEnd)
+        cbEnd.grid(row=4, column=1)
+
+    # 列表控件
+    text = Listbox(selectWindow, font=('微软雅黑', 15), width=45, height=10)
+    # columnspan 组件所跨越的列数
+    text.grid(row=5, columnspan=2)
+    # 设置按钮 sticky对齐方式，N S W E
+    button = Button(selectWindow, text='开始', font=("微软雅黑", 15), command=dealFile).grid(row=6, column=0, sticky=W)
+    button = Button(selectWindow, text='退出', font=("微软雅黑", 15), command=selectWindow.quit).grid(row=6, column=1, sticky=E)
+
+def stateChangeStart():
+    if(cbStartVari.get() & cbEndVari.get()):
+        cbEnd.deselect()
+def stateChangeEnd():
+    if (cbStartVari.get() & cbEndVari.get()):
+        cbStart.deselect()
+def dealFile():
+    try:
+        # 文件复制
+        fileDir = path_input.get()
+        print(fileDir)
+        fileDir = fileDir.replace('\\', '\\\\')
+        if (selectType.get() == 0):
+            GetFileName(fileDir)
+        else:
+            nameInside = nameInside_input.get()
+            filenames = GetDealFile(fileDir, nameInside)
+    except:
+        # 添加数据
+        text.insert(END, "请检查文件路径")
+        # 文本框向下滚动
+        text.see(END)
+        # 更新
+        text.update()
+    else:
+        if (selectType.get() == 0):
+            print(fileNames)
+            ct = time.time()
+            local_time = time.localtime(ct)
+            data_head = time.strftime("%Y%m%d%H%M%S", local_time)
+            file_object = open(os.path.join(fileDir, data_head + '.csv'), 'w', encoding='utf-8')
+            for filename in fileNames:
+                file_object.write(filename + "\n")
+            file_object.close()
+            # 添加数据
+            text.insert(END, "复制完成")
+            # 文本框向下滚动
+            text.see(END)
+            # 更新
+            text.update()
+        else:
+            print(filenames)
+            print(cbEndVari.get())
+            for filename in filenames:
+                if (cbEndVari.get()):
+                    file = os.path.splitext(filename)
+                    name, type = file
+                    print("is in the end  name=" + name + "   &&type==  " + type)
+                    os.rename(fileDir + os.sep + filename, fileDir + os.sep + name + nameInside + type)
+                else:
+                    print("is in the start")
+                    os.rename(fileDir + os.sep + filename, fileDir + os.sep + nameInside + filename)
+            text.insert(END, "修改完成")
+            text.see(END)
+            text.update()
+
+def selectCopy():
+    print("is select copy")
+    selectType.set(0)
+    typeWindow(0)
+    print(selectType.get())
+
+def selectChange():
+    print("is select change")
+    selectType.set(1)
+    typeWindow(1)
+
+selectWindow = Tk()
+selectWindow.title("选择要处理的类型")
+selectWindow.geometry('550x400+398+279')
+selectType =IntVar()
+menubar = Menu(selectWindow)
+menubar.add_command(label='文件名复制', command=selectCopy)
+menubar.add_command(label='文件名修改', command=selectChange)
+
+selectWindow.config(menu=menubar)
+mainloop()
